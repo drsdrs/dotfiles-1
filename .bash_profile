@@ -1,4 +1,5 @@
 for file in ~/.bash/.{bash_prompt,aliases}; do
+	echo "LOADING ...$file"
 	[ -r "$file" ] && source "$file"
 done
 

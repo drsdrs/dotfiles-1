@@ -1,78 +1,98 @@
 #!/bin/bash
 INSTALLDIR=${1:-$HOME}
 
-echo -n "brew install? (OSX) [n/Y]"
-read -n 1 use_brew
+clear
+echo -ne   "\t _____________________________________"
+echo -ne "\n\t|                                     |"
+echo -ne "\n\t|        UBUNTU INSTALL SCRIPT        |"
+echo -ne "\n\t|_____________________________________|\n\n\n"
 
-if [ "$use_brew" == "Y" ]; then
-  bash $PWD/.brew
-fi
 
-echo -n "apt-get install? (debian) [n/Y]"
-read -n 1 use_aptget
+echo -n "Automatic Install All [n/Y]"
+read -n 1 silent
 
-if [ "$use_aptget" == "Y" ]; then
-  apt-get upgrade
-  apt-get install npm zip git phantomjs vim mongodb zsh
-fi
 
-echo -n "npm install? [n/Y]"
-read -n 1 use_npm
+function ask { # ARG1 = question; ARG2 = function to call if answer is YES
+  if [ "$silent" != "Y" ] && [ "$silent" != "y" ]; then
+    echo -ne "\n$1 [n/Y]"
+    read -n 1 answer
+  fi
+  echo -ne "\n"
+  if [ "$answer" == "Y" ] || [ "$answer" == "y" ] || [ "$silent" == "Y" ] || [ "$silent" == "y" ]; then $2; fi
+  echo -ne "\n$1 DONE !\n"
+}
 
-if [ "$use_npm" == "Y" ]; then
-  npm upgrade
-  npm i -g bower grunt-cli less, coffee-script
-fi
 
-echo "Initializing submodules..."
-git submodule init && git submodule update
+###################################################
 
-echo -n "vim configs? [n/Y]"
-read -n 1 use_vim_configs
 
-if [ "$use_vim_configs" == "Y" ]; then
-	mv $INSTALLDIR/.vim $INSTALLDIR/.vim.old 2> /dev/null
-	mv $INSTALLDIR/.vimrc $INSTALLDIR/.vimrc.old 2> /dev/null
+function systemInstall {
+  sudo apt-get update
+  sudo apt-get upgrade
+  sudo apt-get install npm zip git vim zsh
+
+  npm update
+  sudo npm i -g bower grunt-cli less coffee-script
+
+  echo -ne "\nInitializing submodules..."
+  git submodule init && git submodule update
+}
+
+ask "Install system & npm packages" systemInstall
+
+
+###################################################
+
+
+function vimConfig { 
+  mv $INSTALLDIR/.vim $INSTALLDIR/.vim.old 2> /dev/null
+  mv $INSTALLDIR/.vimrc $INSTALLDIR/.vimrc.old 2> /dev/null
   ln -s $PWD/.vim $INSTALLDIR/.vim
   ln -s $PWD/.vimrc $INSTALLDIR/.vimrc
-fi
+}
 
-echo -n "bash configs? [n/Y]"
-read -n 1 use_bash_configs
+ask "Use Vim config" vimConfig
 
-if [ "$use_bash_configs" == "Y" ]; then
+
+###################################################
+
+
+function bashConfig {
+  cp -n $INSTALLDIR/.bashrc $INSTALLDIR/.bashrc.old 
 	mv $INSTALLDIR/.bash $INSTALLDIR/.bash.old 2> /dev/null
 	mv $INSTALLDIR/.bash_profile $INSTALLDIR/.bash_profile.old 2> /dev/null
   ln -s $PWD/.bash $INSTALLDIR/.bash
   ln -s $PWD/.bash_profile $INSTALLDIR/.bash_profile
-fi
-echo -n "zsh configs? [n/Y]"
-read -n 1 use_zsh
+}
 
-if [ "$use_zsh" == "Y" ]; then
+ask "Use bash config" bashConfig
+
+
+###################################################
+
+
+function zshSetup { 
+  wget -q https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh -O - | sh
   ln -s $PWD/.zshrc $INSTALLDIR/.zshrc
-  wget https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh -O - | sh
-fi
+}
 
-echo -n "Git config settings [n/Y]"
-read -n 1 use_git_configs
+ask "Use zsh config & install oh-my-zsh" zshSetup
 
-if [ "$use_git" == "Y" ]; then
-  echo -n "Name: "
+
+###################################################
+
+
+function configGit {
+  echo -ne "\nGit config settings [n/Y]"
+  echo -ne "\nName: "
   read git_name
   echo -ne "\nEmail: "
   read git_email
-  cp $PWD/.gitconfig $INSTALLDIR/.gitconfig
-  sed -i "s/%%GITNAME%%/$git_name/" $INSTALLDIR/.gitconfig
-  sed -i "s/%%GITEMAIL%%/$git_email/" $INSTALLDIR/.gitconfig
-fi
+  echo -ne "\nDefault Editor: "
+  read git_editor
+  git config --global user.name $git_name
+  git config --global user.email $git_email
+  git config --global core.editor $git_editor
+}
 
-if [ ! -d $HOME/p ]; then
-  echo "project directory, symlink from ~/p will be created"
-  echo -n "Dir: "
-  read projectdir
-  if [ $projectdir ]; then
-    ln -s $HOME/p $projectdir
-  fi
-fi
-
+ask "Configure git" configGit
