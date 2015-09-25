@@ -1,0 +1,128 @@
+#!/bin/bash
+INSTALLDIR=${1:-$HOME}
+
+clear
+echo -ne   "\t _____________________________________"
+echo -ne "\n\t|                                     |"
+echo -ne "\n\t|        UBUNTU INSTALL SCRIPT        |"
+echo -ne "\n\t|_____________________________________|\n\n\n"
+
+
+echo -n "Automatic Install All [n/Y]"
+read -n 1 silent
+
+
+function ask { # ARG1 = question; ARG2 = function to call if answer is YES
+  if [ "$silent" != "Y" ] && [ "$silent" != "y" ]; then
+    echo -ne "\n$1 [n/Y]"
+    read -n 1 answer
+  fi
+  echo -ne "\n"
+  if [ "$answer" == "Y" ] || [ "$answer" == "y" ] || [ "$silent" == "Y" ] || [ "$silent" == "y" ]; then $2; fi
+  echo -ne "\n$1 DONE !"
+}
+
+
+###################################################
+
+
+function systemInstall {
+  sudo apt-get update
+  sudo apt-get upgrade
+  sudo apt-get install nodejs zip git vim zsh xchat network-manager \
+	 alsa-base alsa-utils alsa-oss firefox
+
+  npm update
+  sudo npm i -g bower grunt-cli less coffee-script
+
+  echo -ne "\nInitializing submodules..."
+  git submodule init && git submodule update
+}
+
+ask "Install system & npm packages" systemInstall
+
+
+###################################################
+
+
+function vimConfig { 
+  mv $INSTALLDIR/.vim $INSTALLDIR/.vim.old 2> /dev/null
+  mv $INSTALLDIR/.vimrc $INSTALLDIR/.vimrc.old 2> /dev/null
+  ln -s $PWD/.vim $INSTALLDIR/.vim
+  ln -s $PWD/.vimrc $INSTALLDIR/.vimrc
+}
+
+ask "Use Vim config" vimConfig
+
+###################################################
+
+
+function  sublime{ 
+  wget http://c758482.r82.cf2.rackcdn.com/Sublime%20Text%202.0.2%20x64.tar.bz2
+  tar -xvf Sublime\ Text\ 2.0.2\ x64.tar.bz2 
+  rm Sublime\ Text\ 2.0.2\ x64.tar.bz2
+  mkdir ~/.bin
+  mv Sublime\ Text\ 2 .bin/sublime
+  sudo ln -s ~/.bin/sublime/sublime_text  /usr/bin/subl
+  sudo ln -s ~/.bin/sublime/sublime_text  /usr/bin/sublime
+}
+
+ask "Install Sublime" sublime
+
+
+
+###################################################
+
+
+function bashConfig {
+  cp -n $INSTALLDIR/.bashrc $INSTALLDIR/.bashrc.old 
+	mv $INSTALLDIR/.bash $INSTALLDIR/.bash.old 2> /dev/null
+	mv $INSTALLDIR/.bash_profile $INSTALLDIR/.bash_profile.old 2> /dev/null
+  ln -s $PWD/.bash $INSTALLDIR/.bash
+  ln -s $PWD/.bash_profile $INSTALLDIR/.bash_profile
+}
+
+#ask "Use bash config" bashConfig
+
+
+##################################################
+
+
+function awesome {
+  sudo apt-get install awesome
+  mv $INSTALLDIR/.config/awesome $INSTALLDIR/.awesome.old 2> /dev/null
+  ln -s $PWD/awesome $INSTALLDIR/.config/awesome
+}
+
+ask "Use Awesome" awesome
+
+
+###################################################
+
+
+function zshSetup { 
+  rm $INSTALLDIR/.zshrc $INSTALLDIR/.oh-my-zsh -rf
+  ln -s $PWD/.zshrc $INSTALLDIR/.zshrc
+  sh -c "$(wget https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh -O -)"
+}
+
+ask "Use zsh config & install oh-my-zsh" zshSetup
+
+
+###################################################
+
+
+function configGit {
+  echo -ne "\nGit config settings [n/Y]"
+  echo -ne "\nName: "
+  read git_name
+  echo -ne "\nEmail: "
+  read git_email
+  echo -ne "\nDefault Editor: "
+  read git_editor
+  git config --global user.name $git_name
+  git config --global user.email $git_email
+  git config --global core.editor $git_editor
+}
+
+ask "Configure git" configGit
